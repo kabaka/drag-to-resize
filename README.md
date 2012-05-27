@@ -1,7 +1,12 @@
 # Drag to Resize
 
+![Hold the left click button and drag toward the bottom-right to expand images.](http://i.minus.com/ibsMS6DJBWKxZU.jpg)
+
 This is Greasemonkey script which allows you to drag images to resize them on
 almost any web site.
+
+*[View and install the script on userscripts.org.](https://userscripts.org/scripts/show/105403)*
+
 
 It is based on the drag to resize feature in the Reddit Enhancement Suite, a
 GPL project by honestbleeps, which can be found
