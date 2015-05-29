@@ -8,9 +8,9 @@
 // @exclude       http://chess.com/*
 // ==/UserScript==
 
-/* 
+/*
  * Drag to Resize - Drag images to resize them no matter where you are.
- * 
+ *
  * The image resizing code was extracted from honestbleeps's
  * (steve@honestbleeps.com) Reddit Enhancement Suite, a GPL
  * Greasemonkey script. The idea was, as far as I know, all his. What
@@ -59,12 +59,10 @@ var imageData = Array();
  * Also, record the image's original width in imageData[] in case the user
  * wants to restore size later.
  */
-function findAllImages()
-{
+function findAllImages() {
   var imgs = document.getElementsByTagName('img');
-  
-  for (i=0; i<imgs.length; i++)
-  {
+
+  for (i=0; i<imgs.length; i++) {
     // We will populate this as the user interacts with the image, if they
     // do at all.
     imageData[imgs[i]] = {};
@@ -82,9 +80,8 @@ function findAllImages()
  * @param e mousedown or mousemove event.
  * @return Size for image resizing.
  */
-function getDragSize(e)
-{
-		return (p = Math.pow)(p(e.clientX - (rc = e.target.getBoundingClientRect()).left, 2) + p(e.clientY - rc.top, 2), .5);
+function getDragSize(e) {
+  return (p = Math.pow)(p(e.clientX - (rc = e.target.getBoundingClientRect()).left, 2) + p(e.clientY - rc.top, 2), .5);
 }
 
 /*
@@ -106,13 +103,11 @@ function getHeight() {
  *
  * @param imgTag Image element.
  */
-function makeImageZoomable(imgTag)
-{
+function makeImageZoomable(imgTag) {
   dragTargetData = {};
 
-  imgTag.addEventListener('mousedown', function(e)
-  {
-    if(e.ctrlKey != 0)
+  imgTag.addEventListener('mousedown', function(e) {
+    if (e.ctrlKey != 0)
       return true;
 
     /*
@@ -121,95 +116,89 @@ function makeImageZoomable(imgTag)
      * going to catch all of them. This means we'll also be catching meta keys
      * for other systems. Oh well! Patches are welcome.
      */
-    if(e.metaKey != null) // Can be on some platforms
-      if(e.metaKey != 0)
+    if (e.metaKey != null) // Can be on some platforms
+      if (e.metaKey != 0)
         return true;
 
-
-    if(e.button == 0)
-    {
+    if (e.button == 0) {
       // Store some data about the image in case we want to restore size later.
-    
+
       // This would be easier if we could just keep imgs[i].style and set it
       // directly, but that doesn't seem to work.
-      if(imageData[e.target].position ==  null)
-      {
-        imageData[e.target].zIndex = e.target.style.zIndex;
-        imageData[e.target].width = e.target.style.width;
-        imageData[e.target].height = e.target.style.height;
+      if (imageData[e.target].position ==  null) {
+        imageData[e.target].zIndex   = e.target.style.zIndex;
+        imageData[e.target].width    = e.target.style.width;
+        imageData[e.target].height   = e.target.style.height;
         imageData[e.target].position = e.target.style.position;
       }
 
       dragTargetData.iw = e.target.width;
-      dragTargetData.d = getDragSize(e);
+      dragTargetData.d  = getDragSize(e);
       dragTargetData.dr = false;
 
       e.preventDefault();
     }
-
   }, true);
 
-  imgTag.addEventListener('contextmenu', function(e){
-    if(imageData[e.target].resized)
-    {
+  imgTag.addEventListener('contextmenu', function(e) {
+    if (imageData[e.target].resized)  {
       imageData[e.target].resized = false;
-      e.target.style.zIndex = imageData[e.target].zIndex;
-      e.target.style.maxWidth = e.target.style.width = imageData[e.target].width;
+
+      e.target.style.zIndex    = imageData[e.target].zIndex;
+      e.target.style.maxWidth  = e.target.style.width  = imageData[e.target].width;
       e.target.style.maxHeight = e.target.style.height = imageData[e.target].height;
-      e.target.style.position = imageData[e.target].position;
+      e.target.style.position  = imageData[e.target].position;
 
       // Prevent the context menu from actually appearing.
       e.preventDefault();
       e.returnValue = false;
       e.stopPropagation();
+
       return false;
     }
-  
   }, true);
-  imgTag.addEventListener('dblclick', function(e)
-  {
-    if(e.ctrlKey != 0)
+
+  imgTag.addEventListener('dblclick', function(e) {
+    if (e.ctrlKey != 0)
       return true;
 
-    if(e.metaKey != null) // Can be on some platforms
-      if(e.metaKey != 0)
+    if (e.metaKey != null) // Can be on some platforms
+      if (e.metaKey != 0)
         return true;
 
 
-    if(imageData[e.target].resized)
-    {
+    if (imageData[e.target].resized) {
       // If we've already resized it, we have to set this back to the
       // original value. Otherwise, the max size image will keep the
       // original width. Dunno why!
       e.target.style.maxWidth = e.target.style.width = imageData[e.target].width;
     }
 
-    e.target.style.position = "fixed";
-    e.target.style.zIndex = 1000;
-    e.target.style.top = 0;
-    e.target.style.left = 0;
-    e.target.style.maxWidth = e.target.style.width = "auto";
+    e.target.style.position  = "fixed";
+    e.target.style.zIndex    = 1000;
+    e.target.style.top       = 0;
+    e.target.style.left      = 0;
+    e.target.style.maxWidth  = e.target.style.width = "auto";
     e.target.style.maxHeight = e.target.style.height = getHeight() + "px";
-      
+
     imageData[e.target].resized = true;
 
     // Most browsers will want to save the image or something. Prevent that.
     e.preventDefault();
     e.returnValue = false;
     e.stopPropagation();
+
     return false;
-
   }, true);
-  imgTag.addEventListener('mousemove', function(e)
-  {
-    if (dragTargetData.d){
-      e.target.style.maxWidth = e.target.style.width = ((getDragSize(e)) * dragTargetData.iw / dragTargetData.d) + "px";
-      e.target.style.maxHeight = '';
-      e.target.style.height = 'auto';
-      e.target.style.zIndex = 1000; // Make sure the image is on top.
 
-      if(e.target.style.position == '')
-      {
+  imgTag.addEventListener('mousemove', function(e) {
+    if (dragTargetData.d) {
+      e.target.style.maxWidth  = e.target.style.width = ((getDragSize(e)) * dragTargetData.iw / dragTargetData.d) + "px";
+      e.target.style.maxHeight = '';
+      e.target.style.height    = 'auto';
+      e.target.style.zIndex    = 1000; // Make sure the image is on top.
+
+      if (e.target.style.position == '') {
         e.target.style.position = 'relative';
       }
 
@@ -218,43 +207,40 @@ function makeImageZoomable(imgTag)
     }
   }, false);
 
-  imgTag.addEventListener('mouseout', function(e)
-  {
-    dragTargetData.d = false;
-      if (dragTargetData.dr) return false;
-  }, false);
-
-  imgTag.addEventListener('mouseup', function(e)
-  {
+  imgTag.addEventListener('mouseout', function(e) {
     dragTargetData.d = false;
     if (dragTargetData.dr) return false;
+  }, false);
 
+  imgTag.addEventListener('mouseup', function(e) {
+    dragTargetData.d = false;
+    if (dragTargetData.dr) return false;
   }, true);
 
-  imgTag.addEventListener('click', function(e)
-  {
-    if(e.ctrlKey != 0)
+  imgTag.addEventListener('click', function(e) {
+    if (e.ctrlKey != 0)
       return true;
 
-    if(e.metaKey != null) // Can be on some platforms
-      if(e.metaKey != 0)
+    if (e.metaKey != null) // Can be on some platforms
+      if (e.metaKey != 0)
         return true;
 
     dragTargetData.d = false;
+
     if (dragTargetData.dr) {
       e.preventDefault();
       return false;
     }
-    if(imageData[e.target].resized)
-    {
+
+    if (imageData[e.target].resized) {
       // Prevent the context menu from actually appearing.
       e.preventDefault();
       e.returnValue = false;
       e.stopPropagation();
+
       return false;
     }
   }, false);
-
 }
 
 findAllImages();
