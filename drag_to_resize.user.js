@@ -62,7 +62,7 @@ var imageData = Array();
 function findAllImages() {
   var imgs = document.getElementsByTagName('img');
 
-  for (i=0; i<imgs.length; i++) {
+  for (i = 0; i < imgs.length; ++i) {
     // We will populate this as the user interacts with the image, if they
     // do at all.
     imageData[imgs[i]] = {};
@@ -107,65 +107,58 @@ function makeImageZoomable(imgTag) {
   dragTargetData = {};
 
   imgTag.addEventListener('mousedown', function(e) {
-    if (e.ctrlKey != 0)
-      return true;
-
     /*
      * This is so we can support the command key on Mac. The combination of OS
      * and browser changes how the key is passed to JavaScript. So we're just
      * going to catch all of them. This means we'll also be catching meta keys
      * for other systems. Oh well! Patches are welcome.
      */
-    if (e.metaKey != null) // Can be on some platforms
-      if (e.metaKey != 0)
-        return true;
+    if (e.ctrlKey != 0 || (e.metaKey != null && e.metaKey != 0))
+      return true;
 
-    if (e.button == 0) {
-      // Store some data about the image in case we want to restore size later.
+    if (e.button !== 0)
+      return false;
 
-      // This would be easier if we could just keep imgs[i].style and set it
-      // directly, but that doesn't seem to work.
-      if (imageData[e.target].position ==  null) {
-        imageData[e.target].zIndex   = e.target.style.zIndex;
-        imageData[e.target].width    = e.target.style.width;
-        imageData[e.target].height   = e.target.style.height;
-        imageData[e.target].position = e.target.style.position;
-      }
+    // Store some data about the image in case we want to restore size later.
 
-      dragTargetData.iw = e.target.width;
-      dragTargetData.d  = getDragSize(e);
-      dragTargetData.dr = false;
-
-      e.preventDefault();
+    // This would be easier if we could just keep imgs[i].style and set it
+    // directly, but that doesn't seem to work.
+    if (imageData[e.target].position ==  null) {
+      imageData[e.target].zIndex   = e.target.style.zIndex;
+      imageData[e.target].width    = e.target.style.width;
+      imageData[e.target].height   = e.target.style.height;
+      imageData[e.target].position = e.target.style.position;
     }
+
+    dragTargetData.iw = e.target.width;
+    dragTargetData.d  = getDragSize(e);
+    dragTargetData.dr = false;
+
+    e.preventDefault();
   }, true);
 
   imgTag.addEventListener('contextmenu', function(e) {
-    if (imageData[e.target].resized)  {
-      imageData[e.target].resized = false;
+    if (!imageData[e.target].resized)
+      return true;
 
-      e.target.style.zIndex    = imageData[e.target].zIndex;
-      e.target.style.maxWidth  = e.target.style.width  = imageData[e.target].width;
-      e.target.style.maxHeight = e.target.style.height = imageData[e.target].height;
-      e.target.style.position  = imageData[e.target].position;
+    imageData[e.target].resized = false;
 
-      // Prevent the context menu from actually appearing.
-      e.preventDefault();
-      e.returnValue = false;
-      e.stopPropagation();
+    e.target.style.zIndex    = imageData[e.target].zIndex;
+    e.target.style.maxWidth  = e.target.style.width  = imageData[e.target].width;
+    e.target.style.maxHeight = e.target.style.height = imageData[e.target].height;
+    e.target.style.position  = imageData[e.target].position;
 
-      return false;
-    }
+    // Prevent the context menu from actually appearing.
+    e.preventDefault();
+    e.returnValue = false;
+    e.stopPropagation();
+
+    return false;
   }, true);
 
   imgTag.addEventListener('dblclick', function(e) {
-    if (e.ctrlKey != 0)
+    if (e.ctrlKey != 0 || (e.metaKey != null && e.metaKey != 0))
       return true;
-
-    if (e.metaKey != null) // Can be on some platforms
-      if (e.metaKey != 0)
-        return true;
-
 
     if (imageData[e.target].resized) {
       // If we've already resized it, we have to set this back to the
@@ -192,54 +185,57 @@ function makeImageZoomable(imgTag) {
   }, true);
 
   imgTag.addEventListener('mousemove', function(e) {
-    if (dragTargetData.d) {
-      e.target.style.maxWidth  = e.target.style.width = ((getDragSize(e)) * dragTargetData.iw / dragTargetData.d) + "px";
-      e.target.style.maxHeight = '';
-      e.target.style.height    = 'auto';
-      e.target.style.zIndex    = 1000; // Make sure the image is on top.
+    if (!dragTargetData.d)
+      return true;
 
-      if (e.target.style.position == '') {
-        e.target.style.position = 'relative';
-      }
+    e.target.style.maxWidth  = e.target.style.width = ((getDragSize(e)) * dragTargetData.iw / dragTargetData.d) + "px";
+    e.target.style.maxHeight = '';
+    e.target.style.height    = 'auto';
+    e.target.style.zIndex    = 1000; // Make sure the image is on top.
 
-      dragTargetData.dr = true;
-      imageData[e.target].resized = true;
+    if (e.target.style.position == '') {
+      e.target.style.position = 'relative';
     }
+
+    dragTargetData.dr = true;
+    imageData[e.target].resized = true;
   }, false);
 
   imgTag.addEventListener('mouseout', function(e) {
     dragTargetData.d = false;
-    if (dragTargetData.dr) return false;
+
+    return !dragTargetData.dr;
   }, false);
 
   imgTag.addEventListener('mouseup', function(e) {
     dragTargetData.d = false;
-    if (dragTargetData.dr) return false;
+
+    return !dragTargetData.dr;
   }, true);
 
   imgTag.addEventListener('click', function(e) {
-    if (e.ctrlKey != 0)
+    if (e.ctrlKey != 0 || (e.metaKey != null && e.metaKey != 0))
       return true;
-
-    if (e.metaKey != null) // Can be on some platforms
-      if (e.metaKey != 0)
-        return true;
 
     dragTargetData.d = false;
 
     if (dragTargetData.dr) {
-      e.preventDefault();
-      return false;
-    }
-
-    if (imageData[e.target].resized) {
-      // Prevent the context menu from actually appearing.
       e.preventDefault();
       e.returnValue = false;
       e.stopPropagation();
 
       return false;
     }
+
+    if (!imageData[e.target].resized)
+      return true;
+
+    // Prevent the normal action from happening, whatever it is.
+    e.preventDefault();
+    e.returnValue = false;
+    e.stopPropagation();
+
+    return false;
   }, false);
 }
 

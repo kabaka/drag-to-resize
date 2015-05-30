@@ -3,7 +3,7 @@
 This is Greasemonkey script which allows you to drag images to resize them on
 almost any web site.
 
-*[View and install the script on userscripts.org.](https://userscripts.org/scripts/show/105403)*
+*[View and install the script on userscripts.org.](http://userscripts-mirror.org/scripts/show/105403)*
 
 
 It is based on the drag to resize feature in the Reddit Enhancement Suite, a
@@ -38,13 +38,15 @@ browsers, so please report any incompatibilities.
 # Change Log
 
 * 2011-06-23: Resized images are brought to the front.
-* 2011-06-24: Double-clicks now make images fit your screen (vertically). 
-Right-clicks restore any resized images to their original size. Chess.com added
-to excludes.
+* 2011-06-24: Double-clicks now make images fit your screen (vertically).
+  Right-clicks restore any resized images to their original size. Chess.com
+  added to excludes.
 * 2011-07-06: Holding control (or command on Mac) now prevents dragging from
-resizing images. The image will be dragged as if the script is not installed.
+  resizing images. The image will be dragged as if the script is not installed.
 * 2011-07-06: Holding control now correctly prevents the script from working.
-Clicks are also now correctly permitted when holding control, making using this
-with a tablet much easier (clicking with a tablet almost always results in a
-tiny amount of dragging). The control key modifier is preserved for the click
-and will used however the browser is configured to use it.
+  Clicks are also now correctly permitted when holding control, making using
+  this with a tablet much easier (clicking with a tablet almost always results
+  in a tiny amount of dragging). The control key modifier is preserved for the
+  click and will used however the browser is configured to use it.
+* 2015-05-29: Fix event propagation bug which caused many images to still
+  perform their on-click function after resizing.
