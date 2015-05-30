@@ -52,3 +52,5 @@ browsers, so please report any incompatibilities.
   click and will used however the browser is configured to use it.
 * 2015-05-29: Fix event propagation bug which caused many images to still
   perform their on-click function after resizing.
+* 2015-05-30: Really fix above bug, and fix image resize resetting to use the
+  correct size.

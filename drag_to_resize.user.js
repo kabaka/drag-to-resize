@@ -65,8 +65,10 @@ function findAllImages() {
   for (i = 0; i < imgs.length; ++i) {
     // We will populate this as the user interacts with the image, if they
     // do at all.
-    imageData[imgs[i]] = {};
-    imageData[imgs[i]].resized = false;
+    imageData[i]         = {};
+    imageData[i].resized = false;
+
+    imgs[i].dragToResizeId = i;
 
     makeImageZoomable(imgs[i]);
   }
@@ -77,7 +79,7 @@ function findAllImages() {
  * Calculate the drag size for the event. This is taken directly from
  * honestbleeps's Reddit Enhancement Suite.
  *
- * @param e mousedown or mousemove event.
+ * @param mousedown e or mousemove event.
  * @return Size for image resizing.
  */
 function getDragSize(e) {
@@ -88,10 +90,35 @@ function getDragSize(e) {
  * Get the viewport's vertical size. This should work in most browsers. We'll
  * use this when making images fit the screen by height.
  *
- * @return Viewport size.
+ * @return int Viewport size.
  */
 function getHeight() {
-  return window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+  return window.innerHeight ||
+    document.documentElement.clientHeight ||
+    document.body.clientHeight;
+}
+
+/*
+ * Get the imageData entry for the given event's target.
+ *
+ * @return Object
+ */
+function getImageData(e) {
+  return imageData[e.target.dragToResizeId];
+}
+
+/*
+  * Try to stop propagation of an event.
+  *
+  * @param event e Event to stop.
+  * @return false
+  */
+function stopEvent(e) {
+  e.preventDefault();
+  e.returnValue = false;
+  e.stopPropagation();
+
+  return false;
 }
 
 /*
@@ -101,12 +128,12 @@ function getHeight() {
  * inline. For readability, I may move them. But the code is small
  * enough that I don't yet care.
  *
- * @param imgTag Image element.
+ * @param Object imgElement Image element.
  */
-function makeImageZoomable(imgTag) {
+function makeImageZoomable(imgElement) {
   dragTargetData = {};
 
-  imgTag.addEventListener('mousedown', function(e) {
+  imgElement.addEventListener('mousedown', function(e) {
     /*
      * This is so we can support the command key on Mac. The combination of OS
      * and browser changes how the key is passed to JavaScript. So we're just
@@ -121,50 +148,51 @@ function makeImageZoomable(imgTag) {
 
     // Store some data about the image in case we want to restore size later.
 
-    // This would be easier if we could just keep imgs[i].style and set it
-    // directly, but that doesn't seem to work.
-    if (imageData[e.target].position ==  null) {
-      imageData[e.target].zIndex   = e.target.style.zIndex;
-      imageData[e.target].width    = e.target.style.width;
-      imageData[e.target].height   = e.target.style.height;
-      imageData[e.target].position = e.target.style.position;
+    var myImageData = getImageData(e);
+
+    if (myImageData.position ==  null) {
+      myImageData.zIndex   = e.target.style.zIndex;
+      myImageData.width    = e.target.style.width;
+      myImageData.height   = e.target.style.height;
+      myImageData.position = e.target.style.position;
     }
 
-    dragTargetData.iw = e.target.width;
-    dragTargetData.d  = getDragSize(e);
-    dragTargetData.dr = false;
+    dragTargetData.image_width = e.target.width;
+    dragTargetData.dragSize    = getDragSize(e);
 
     e.preventDefault();
   }, true);
 
-  imgTag.addEventListener('contextmenu', function(e) {
-    if (!imageData[e.target].resized)
+
+  // Reset image to original size and unlock for future events.
+  imgElement.addEventListener('contextmenu', function(e) {
+    var myImageData = getImageData(e);
+
+    if (!myImageData.resized)
       return true;
 
-    imageData[e.target].resized = false;
+    myImageData.resized = false;
 
-    e.target.style.zIndex    = imageData[e.target].zIndex;
-    e.target.style.maxWidth  = e.target.style.width  = imageData[e.target].width;
-    e.target.style.maxHeight = e.target.style.height = imageData[e.target].height;
-    e.target.style.position  = imageData[e.target].position;
+    e.target.style.zIndex    = myImageData.zIndex;
+    e.target.style.maxWidth  = e.target.style.width  = myImageData.width;
+    e.target.style.maxHeight = e.target.style.height = myImageData.height;
+    e.target.style.position  = myImageData.position;
 
-    // Prevent the context menu from actually appearing.
-    e.preventDefault();
-    e.returnValue = false;
-    e.stopPropagation();
-
-    return false;
+    return stopEvent(e);
   }, true);
 
-  imgTag.addEventListener('dblclick', function(e) {
+  // Expand image to fill screen.
+  imgElement.addEventListener('dblclick', function(e) {
     if (e.ctrlKey != 0 || (e.metaKey != null && e.metaKey != 0))
       return true;
 
-    if (imageData[e.target].resized) {
+    var myImageData = getImageData(e);
+
+    if (myImageData.resized) {
       // If we've already resized it, we have to set this back to the
       // original value. Otherwise, the max size image will keep the
       // original width. Dunno why!
-      e.target.style.maxWidth = e.target.style.width = imageData[e.target].width;
+      e.target.style.maxWidth = e.target.style.width = myImageData.width;
     }
 
     e.target.style.position  = "fixed";
@@ -174,21 +202,21 @@ function makeImageZoomable(imgTag) {
     e.target.style.maxWidth  = e.target.style.width = "auto";
     e.target.style.maxHeight = e.target.style.height = getHeight() + "px";
 
-    imageData[e.target].resized = true;
+    myImageData.resized = true;
 
     // Most browsers will want to save the image or something. Prevent that.
-    e.preventDefault();
-    e.returnValue = false;
-    e.stopPropagation();
 
-    return false;
+    return stopEvent(e);
   }, true);
 
-  imgTag.addEventListener('mousemove', function(e) {
-    if (!dragTargetData.d)
+  imgElement.addEventListener('mousemove', function(e) {
+    if (!dragTargetData.dragSize)
       return true;
 
-    e.target.style.maxWidth  = e.target.style.width = ((getDragSize(e)) * dragTargetData.iw / dragTargetData.d) + "px";
+    e.target.style.maxWidth =
+      e.target.style.width  =
+      ((getDragSize(e)) * dragTargetData.image_width / dragTargetData.dragSize) + "px";
+
     e.target.style.maxHeight = '';
     e.target.style.height    = 'auto';
     e.target.style.zIndex    = 1000; // Make sure the image is on top.
@@ -197,45 +225,31 @@ function makeImageZoomable(imgTag) {
       e.target.style.position = 'relative';
     }
 
-    dragTargetData.dr = true;
-    imageData[e.target].resized = true;
+    getImageData(e).resized = true;
   }, false);
 
-  imgTag.addEventListener('mouseout', function(e) {
-    dragTargetData.d = false;
+  imgElement.addEventListener('mouseout', function(e) {
+    dragTargetData.dragSize = false;
 
-    return !dragTargetData.dr;
+    return !getImageData(e).resized;
   }, false);
 
-  imgTag.addEventListener('mouseup', function(e) {
-    dragTargetData.d = false;
+  imgElement.addEventListener('mouseup', function(e) {
+    dragTargetData.dragSize = false;
 
-    return !dragTargetData.dr;
+    return !getImageData(e).resized;
   }, true);
 
-  imgTag.addEventListener('click', function(e) {
+  imgElement.addEventListener('click', function(e) {
     if (e.ctrlKey != 0 || (e.metaKey != null && e.metaKey != 0))
       return true;
 
-    dragTargetData.d = false;
+    dragTargetData.dragSize = false;
 
-    if (dragTargetData.dr) {
-      e.preventDefault();
-      e.returnValue = false;
-      e.stopPropagation();
-
-      return false;
-    }
-
-    if (!imageData[e.target].resized)
+    if (getImageData(e).resized === false)
       return true;
 
-    // Prevent the normal action from happening, whatever it is.
-    e.preventDefault();
-    e.returnValue = false;
-    e.stopPropagation();
-
-    return false;
+    return stopEvent(e);
   }, false);
 }
 
