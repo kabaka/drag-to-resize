@@ -3,9 +3,12 @@
 // @namespace 	  http://kylej.name/
 // @description	  Drag to resize images, based on code in the RES.
 // @author        Kabaka
+// @version       1.3
+// @source        https://github.com/lenethx/drag-to-resize
 // @include       *
 // @exclude       http://www.chess.com/*
 // @exclude       http://chess.com/*
+// @exclude       https://neocities.org/*
 // ==/UserScript==
 
 /*
@@ -59,21 +62,56 @@ var imageData = Array();
  * Also, record the image's original width in imageData[] in case the user
  * wants to restore size later.
  */
+
+
 function findAllImages() {
   var imgs = document.getElementsByTagName('img');
 
-  for (i = 0; i < imgs.length; ++i) {
-    // We will populate this as the user interacts with the image, if they
-    // do at all.
-    imageData[i]         = {};
-    imageData[i].resized = false;
+  for (let i = 0; i < imgs.length; ++i) {
 
-    imgs[i].dragToResizeId = i;
-
-    makeImageZoomable(imgs[i]);
+    feedSingleImage(imgs[i], i);
   }
-
 }
+
+function feedSingleImage(image, i=imageData.length) {
+  // We will populate this as the user interacts with the image, if they
+  // do at all.
+  imageData[i] = {};
+  imageData[i].resized = false;
+
+  image.dragToResizeId = i;
+
+  makeImageZoomable(image);
+}
+
+function findNewImages() {
+//Add observer to feed new images to makeImageZoomable
+  var mutationObserver = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type=='childList'){
+        mutation.addedNodes.forEach(function(newnode){
+          if (newnode.nodeName=='IMG'){
+            feedSingleImage(newnode);
+          } else if (newnode.firstChild){
+            newnode.querySelectorAll('img').forEach(function(childimg){
+              feedSingleImage(childimg);
+            });
+          }
+        });
+      }
+    });
+  });
+
+  mutationObserver.observe(document.documentElement, {
+    attributes: true,
+    characterData: true,
+    childList: true,
+    subtree: true,
+    attributeOldValue: true,
+    characterDataOldValue: true
+  });
+}
+
 
 /*
  * Calculate the drag size for the event. This is taken directly from
@@ -254,5 +292,10 @@ function makeImageZoomable(imgElement) {
 }
 
 findAllImages();
+findNewImages();
 document.addEventListener('dragstart', function() {return false}, false);
+
+
+
+
 
